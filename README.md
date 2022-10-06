@@ -85,9 +85,9 @@ flag.
 All commits in the history of the current commit, or in the history of
 the *refs* parameter.
 
-I'd suggest only using this on *develop* or *origin/develop* as not to
-link to commits that may be rebased, not end up being merged at all,
-etc.
+I'd suggest only using this on *develop*, *master* or *main* and such as
+not to link to commits that may be rebased, not end up being merged at
+all, etc.
 
 **When is a commit considered 'already mentioned'?**
 
