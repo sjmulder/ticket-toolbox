@@ -117,7 +117,7 @@ void Usage(string message)
 
 IEnumerable<Mention> ReadMentions()
 {
-    using var git = StartGitOrFail(new[] { "log" }.Concat(refs).ToArray());
+    using var git = StartGit(new[] { "log" }.Concat(refs).ToArray());
 
     Commit? commit = null;
 
@@ -159,7 +159,7 @@ T DoOrFail<T>(Func<T> fn, string message)
 
 string GetGitOriginOrFail()
 {
-    using var git = StartGitOrFail("remote", "get-url", "origin");
+    using var git = StartGit("remote", "get-url", "origin");
 
     string? output = git.StandardOutput.ReadLine();
 
@@ -173,7 +173,7 @@ string GetGitOriginOrFail()
 
 string GetGitConfigOrFail(string name)
 {
-    using var git = StartGitOrFail("config", name);
+    using var git = StartGit("config", name);
 
     string? output = git.StandardOutput.ReadLine();
 
@@ -185,7 +185,7 @@ string GetGitConfigOrFail(string name)
     return output;
 }
 
-Process StartGitOrFail(params string[] args)
+Process StartGit(params string[] args)
 {
     var git = new Process();
     git.StartInfo.FileName = "git";
