@@ -60,7 +60,7 @@ foreach (var group in ReadMentions().GroupBy(x => x.IssueKey))
         continue;
     }
 
-    Console.WriteLine($"{group.Key} {issue.Fields?.Summary ?? "(no title)"}");
+    Console.WriteLine($"{group.Key} {issue.Fields.Summary ?? "(no title)"}");
 
     var commits = group.Select(x => x.Commit).Distinct();
     var toMention = new List<Commit>();
