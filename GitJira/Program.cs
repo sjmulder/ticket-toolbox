@@ -11,7 +11,7 @@ bool dryRun = false;
 
 if (args.Length == 0 || args[0] == "-?")
     Usage("no command given");
-if (args[0] != "link-issues")
+if (args[0] != "link-commits")
     Usage($"bad command: {args[0]}");
 
 args = args[1..];
@@ -111,7 +111,7 @@ foreach (var group in ReadMentions().GroupBy(x => x.IssueKey))
 void Usage(string message)
 {
     Console.Error.WriteLine($"git-jira: {message}");
-    Console.Error.WriteLine("Usage: git-jira link-issues [refs]");
+    Console.Error.WriteLine("Usage: git-jira link-commits [refs]");
     Environment.Exit(exUsage);
 }
 

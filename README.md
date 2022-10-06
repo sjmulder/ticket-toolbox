@@ -2,7 +2,7 @@ git-jira
 ========
 Post commit link comments to mentioned Jira tickets.
 
-`git-jira link-issues [-v|--verbose] [-n|--dry-run] [refs]`
+`git-jira link-commits [-v|--verbose] [-n|--dry-run] [refs]`
 
 The `git log` history for the mentioned *refs* (or the current commit)
 is inspected and searched for Jira issues mentions. The Jira issues are
@@ -39,7 +39,7 @@ your `$PATH`.
 Example
 -------
     > cd C:\code\SomeWebapp
-    > git-jira link-issues
+    > git-jira link-commits
 
     FOO-171 Enable Linux-based backend development setups
       839837b0 Script to import development databases on Linux
