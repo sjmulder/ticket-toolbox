@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -32,7 +33,7 @@ if (refs.FirstOrDefault(x => x.StartsWith("-")) is { } badRef)
     Usage($"bad ref name: {badRef}");
 
 string jiraUser = GetEnvOrFail("JIRA_USER");
-string jiraToken = GetEnvOrFail("JIRA_TOKEN");
+string jiraSecret = GetSecret("JIRA_SECRET", "Jira client secret");
 
 string jiraBaseUrlStr = GetGitConfigOrFail("jira.baseUrl");
 string issueRegexStr = GetGitConfigOrFail("jira.issueRegex");
@@ -47,7 +48,7 @@ if (!commitLinkFormat.Contains("{commitHash}"))
 string repoName = Regex.Replace(GetGitOriginOrFail(), "\\.git$", "")
     .Split('/').Last();
 
-var jira = new JiraClient(jiraBaseUrl, jiraUser, jiraToken);
+var jira = new JiraClient(jiraBaseUrl, jiraUser, jiraSecret);
 jira.Verbose = verbose;
 
 foreach (var group in ReadMentions().GroupBy(x => x.IssueKey))
@@ -183,6 +184,61 @@ string GetGitConfigOrFail(string name)
         Fail($"'{name}' must be set in git config");
 
     return output;
+}
+
+string GetSecret(string envName, string friendlyName)
+{
+    string? secret = Environment.GetEnvironmentVariable(envName);
+    if (!string.IsNullOrWhiteSpace(secret))
+        return secret;
+
+    string? command = Environment.GetEnvironmentVariable($"{envName}_COMMAND");
+    if (command != null)
+    {
+        using var process = new Process();
+        process.StartInfo.CreateNoWindow = true;
+        process.StartInfo.RedirectStandardOutput = true;
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            process.StartInfo.FileName = "cmd";
+            process.StartInfo.Arguments = $"/c {command}";
+        }
+        else
+        {
+            process.StartInfo.FileName = "sh";
+            process.StartInfo.ArgumentList.Add("-c");
+            process.StartInfo.ArgumentList.Add(command);
+        }
+
+        if (verbose)
+            Console.WriteLine($"+ {command}");
+
+        process.Start();
+
+        secret = process.StandardOutput.ReadLine();
+
+        process.WaitForExit();
+
+        if (process.ExitCode != 0)
+            Console.Error.WriteLine(
+                $"git-jira: '{command}' returned non-zero exit code " +
+                $"{process.ExitCode}");
+        else if (string.IsNullOrWhiteSpace(secret))
+            Console.Error.WriteLine($"git-jira: '{command}' returned no data");
+        else
+            return secret;
+    }
+
+    while (string.IsNullOrWhiteSpace(secret))
+    {
+        Console.Write($"{friendlyName}: ");
+        Console.Out.Flush();
+
+        secret = Console.ReadLine();
+    }
+
+    return secret;
 }
 
 Process StartGit(params string[] args)

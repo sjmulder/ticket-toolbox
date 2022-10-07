@@ -24,7 +24,13 @@ Jira authentication needs to be configured in your environment. First,
 then run or add this to your `.bashrc` or such:
 
     export JIRA_USER=john.doe@example.com
-    export JIRA_TOKEN=<your token here>
+
+For your secret, you can do one of three things:
+
+ 1. Export `JIRA_SECRET` with the token (not recommended).
+ 2. Export `JIRA_SECRET_COMMAND` with a command that yields the token, e.g.
+    using a password manager.
+ 3. Do nothing; the tool will prompt you for a token every time.
 
 Then, per-repository, with tweaks as appropriate for your repository and
 Jira instance:
@@ -66,14 +72,12 @@ Q&A
 ---
 **Is this secure?**
 
-Exposing your Jira access token in the environment poses a risk of
-malicious software or users extracting the token and using it to
-impersonate you. If you are concerned about that, you can export those
-variables only when needed.
+This tool has no dependencies except .NET itself, uses git only locally
+and the only information sent to Jira is the posted comment.
 
-As for the program itself, it has no dependencies except .NET itself,
-uses git only locally and the only information sent to Jira is the
-posted comment.
+You do however need to be careful with your Jira secret. Either set up
+`JIRA_SECRET_COMMAND` with something secure, or just let the tool
+prompt for it.
 
 **Can I try this without actually posting things to Jira?**
 
