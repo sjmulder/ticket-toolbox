@@ -1,0 +1,26 @@
+name: Build
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        runtime_id:
+        - win-x64
+        - linux-x64
+        - osx.11.0-x64
+        - osx.11.0-arm64
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x
+      - name: Build
+        run: dotnet publish -r ${{ matrix.runtime_id }} -o dist/${{ matrix.runtime_id }} --no-self-contained
+      - uses: actions/upload-artifact@v3
+        with:
+          name: git-jira.${{ matrix.runtime_id }}
+          path: dist/${{ matrix.runtime_id }}
