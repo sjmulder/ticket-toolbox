@@ -98,3 +98,7 @@ all, etc.
 If the first 8 characters of the commit hash occur in the Jira issue
 description or any of its comments, the commit is considered 'already
 mentioned' and not included in the new comment.
+
+License
+-------
+BSD-2, see LICENSE.md.
