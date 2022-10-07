@@ -76,8 +76,8 @@ This tool has no dependencies except .NET itself, uses git only locally
 and the only information sent to Jira is the posted comment.
 
 You do however need to be careful with your Jira secret. Either set up
-`JIRA_SECRET_COMMAND` with something secure, or just let the tool
-prompt for it.
+`JIRA_SECRET_COMMAND` with something secure like a password manager, or
+just let the tool prompt for it.
 
 **Can I try this without actually posting things to Jira?**
 
