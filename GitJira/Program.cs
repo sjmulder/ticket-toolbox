@@ -1,16 +1,10 @@
-﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
-using System.Text;
+﻿using System.Text;
 using System.Text.RegularExpressions;
 
 namespace GitJira;
 
 public static class Program
 {
-    const int ExUsage = 64; // EX_USAGE from sysexits.h
-    const int ExSubprocess = 123; // xargs' convention
-
     public static bool Verbose { get; private set; }
     public static bool DryRun { get; private set; }
 
@@ -30,7 +24,7 @@ public static class Program
             else if (args[0] == "-n" || args[0] == "--dry-run")
                 DryRun = true;
             else
-                Fail($"bad option: {args[0]}");
+                Util.Fail($"bad option: {args[0]}");
         }
 
         var refs = args;
@@ -38,26 +32,18 @@ public static class Program
         if (refs.FirstOrDefault(x => x.StartsWith("-")) is { } badRef)
             Usage($"bad ref name: {badRef}");
 
-        string jiraUser = GetEnvOrFail("JIRA_USER");
-        string jiraSecret = GetSecret("JIRA_SECRET", "Jira client secret");
+        var config = GitJiraConfig.LoadOrFail();
 
-        string jiraBaseUrlStr = Git.GetConfigOrFail("jira.baseUrl");
-        string issueRegexStr = Git.GetConfigOrFail("jira.issueRegex");
-        string commitLinkFormat = Git.GetConfigOrFail("jira.commitLinkFormat");
-
-        var jiraBaseUrl = DoOrFail(() => new Uri(jiraBaseUrlStr), "jira.baseUrl");
-        var issueRegex = DoOrFail(() => new Regex(issueRegexStr), "jira.issueRegex");
-
-        if (!commitLinkFormat.Contains("{commitHash}"))
+        if (!config.CommitLinkFormat.Contains("{commitHash}"))
             Usage("jira.commitLinkFormat must contain {commitHash}");
 
         string repoName = Regex.Replace(Git.GetOriginOrFail(), "\\.git$", "")
             .Split('/').Last();
 
-        var jira = new JiraClient(jiraBaseUrl, jiraUser, jiraSecret);
+        var jira = new JiraClient(config.JiraBaseUrl, config.JiraUser, config.JiraSecret);
         jira.Verbose = Verbose;
 
-        foreach (var group in ReadMentions(refs, issueRegex).GroupBy(x => x.IssueKey))
+        foreach (var group in ReadMentions(refs, config.IssueRegex).GroupBy(x => x.IssueKey))
         {
             var issue = await jira.GetIssueAsync(group.Key);
 
@@ -99,7 +85,7 @@ public static class Program
                 comment.Append(" - ");
                 comment.Append(commit.Title);
                 comment.Append('|');
-                comment.Append(commitLinkFormat.Replace("{commitHash}", commit.Hash));
+                comment.Append(config.CommitLinkFormat.Replace("{commitHash}", commit.Hash));
                 comment.AppendLine("]");
             }
 
@@ -116,86 +102,11 @@ public static class Program
         }
     }
 
-    [DoesNotReturn]
-    public static void Fail(string message, int exitCode = 1)
-    {
-        Console.Error.WriteLine($"git-jira: {message}");
-        Environment.Exit(exitCode);
-    }
-
-    public static T DoOrFail<T>(Func<T> fn, string message)
-    {
-        try
-        {
-            return fn();
-        }
-        catch (Exception e)
-        {
-            Fail($"{message}: {e.Message}");
-            throw; // not reached
-        }
-    }
-
-    public static string GetSecret(string envName, string friendlyName)
-    {
-        string? secret = Environment.GetEnvironmentVariable(envName);
-        if (!string.IsNullOrWhiteSpace(secret))
-            return secret;
-
-        string? command = Environment.GetEnvironmentVariable($"{envName}_COMMAND");
-        if (command != null)
-        {
-            using var process = new Process();
-            process.StartInfo.CreateNoWindow = true;
-            process.StartInfo.RedirectStandardOutput = true;
-
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                process.StartInfo.FileName = "cmd";
-                process.StartInfo.Arguments = $"/c {command}";
-            }
-            else
-            {
-                process.StartInfo.FileName = "sh";
-                process.StartInfo.ArgumentList.Add("-c");
-                process.StartInfo.ArgumentList.Add(command);
-            }
-
-            if (Verbose)
-                Console.WriteLine($"+ {command}");
-
-            process.Start();
-
-            secret = process.StandardOutput.ReadLine();
-
-            process.WaitForExit();
-
-            if (process.ExitCode != 0)
-                Console.Error.WriteLine(
-                    $"git-jira: '{command}' returned non-zero exit code " +
-                    $"{process.ExitCode}");
-            else if (string.IsNullOrWhiteSpace(secret))
-                Console.Error.WriteLine($"git-jira: '{command}' returned no data");
-            else
-                return secret;
-        }
-
-        while (string.IsNullOrWhiteSpace(secret))
-        {
-            Console.Write($"{friendlyName}: ");
-            Console.Out.Flush();
-
-            secret = Console.ReadLine();
-        }
-
-        return secret;
-    }
-
     static void Usage(string message)
     {
         Console.Error.WriteLine($"git-jira: {message}");
         Console.Error.WriteLine("Usage: git-jira link-commits [refs]");
-        Environment.Exit(ExUsage);
+        Environment.Exit(Util.ExUsage);
     }
 
     static IEnumerable<Mention> ReadMentions(IEnumerable<string> refs, Regex issueRegex)
@@ -223,17 +134,7 @@ public static class Program
 
         git.WaitForExit();
 
-        if (git.ExitCode != 0)
-            Fail($"git exited with status code {git.ExitCode}", ExSubprocess);
-    }
-
-    static string GetEnvOrFail(string name)
-    {
-        string? value = Environment.GetEnvironmentVariable(name);
-        if (value == null)
-            Fail($"{name} must be set");
-
-        return value;
+        if (git.ExitCode != 0) Util.Fail($"git exited with status code {git.ExitCode}", Util.ExSubprocess);
     }
 }
 
