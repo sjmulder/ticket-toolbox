@@ -4,276 +4,284 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 
-const int exUsage = 64;         // EX_USAGE from sysexits.h
-const int exSubprocess = 123;   // xargs' convention
+namespace GitJira;
 
-bool verbose = false;
-bool dryRun = false;
-
-if (args.Length == 0 || args[0] == "-?")
-    Usage("no command given");
-if (args[0] != "link-commits")
-    Usage($"bad command: {args[0]}");
-
-args = args[1..];
-
-for (; args.Length > 0 && args[0].StartsWith('-'); args = args[1..])
+public static class Program
 {
-    if (args[0] == "-v" || args[0] == "--interactive")
-        verbose = true;
-    else if (args[0] == "-n" || args[0] == "--dry-run")
-        dryRun = true;
-    else
-        Fail($"bad option: {args[0]}");
-}
+    const int ExUsage = 64; // EX_USAGE from sysexits.h
+    const int ExSubprocess = 123; // xargs' convention
 
-var refs = args;
+    static bool _verbose;
+    static bool _dryRun;
 
-if (refs.FirstOrDefault(x => x.StartsWith("-")) is { } badRef)
-    Usage($"bad ref name: {badRef}");
-
-string jiraUser = GetEnvOrFail("JIRA_USER");
-string jiraSecret = GetSecret("JIRA_SECRET", "Jira client secret");
-
-string jiraBaseUrlStr = GetGitConfigOrFail("jira.baseUrl");
-string issueRegexStr = GetGitConfigOrFail("jira.issueRegex");
-string commitLinkFormat = GetGitConfigOrFail("jira.commitLinkFormat");
-
-var jiraBaseUrl = DoOrFail(() => new Uri(jiraBaseUrlStr), "jira.baseUrl");
-var issueRegex = DoOrFail(() => new Regex(issueRegexStr), "jira.issueRegex");
-
-if (!commitLinkFormat.Contains("{commitHash}"))
-    Usage("jira.commitLinkFormat must contain {commitHash}");
-
-string repoName = Regex.Replace(GetGitOriginOrFail(), "\\.git$", "")
-    .Split('/').Last();
-
-var jira = new JiraClient(jiraBaseUrl, jiraUser, jiraSecret);
-jira.Verbose = verbose;
-
-foreach (var group in ReadMentions().GroupBy(x => x.IssueKey))
-{
-    var issue = await jira.GetIssueAsync(group.Key);
-
-    if (issue == null)
+    public static async Task Main(string[] args)
     {
-        Console.WriteLine($"{group.Key} (not found)");
-        continue;
-    }
+        if (args.Length == 0 || args[0] == "-?")
+            Usage("no command given");
+        if (args[0] != "link-commits")
+            Usage($"bad command: {args[0]}");
 
-    Console.WriteLine($"{group.Key} {issue.Fields.Summary ?? "(no title)"}");
+        args = args[1..];
 
-    var commits = group.Select(x => x.Commit).Distinct();
-    var toMention = new List<Commit>();
-
-    foreach (var commit in commits)
-    {
-        if (issue.GetAllText().Any(x => x.Contains(commit.ShortHash)))
-            Console.WriteLine($"  already mentioned: {commit}");
-        else
-            toMention.Add(commit);
-    }
-
-    if (toMention.Count == 0)
-    {
-        Console.WriteLine("  nothing to do for issue");
-        continue;
-    }
-
-    var comment = new StringBuilder();
-    comment.AppendLine($"Related commits in {repoName}:");
-    comment.AppendLine();
-
-    foreach (var commit in toMention)
-    {
-        Console.WriteLine($"  {commit}");
-
-        comment.Append(" * [");
-        comment.Append(commit.ShortHash);
-        comment.Append(" - ");
-        comment.Append(commit.Title);
-        comment.Append('|');
-        comment.Append(commitLinkFormat.Replace("{commitHash}", commit.Hash));
-        comment.AppendLine("]");
-    }
-
-    if (verbose)
-    {
-        Console.WriteLine();
-        Console.WriteLine(comment);
-    }
-
-    if (dryRun)
-        continue;
-
-    await jira.PostCommentAsync(issue.Key, comment.ToString());
-}
-
-void Usage(string message)
-{
-    Console.Error.WriteLine($"git-jira: {message}");
-    Console.Error.WriteLine("Usage: git-jira link-commits [refs]");
-    Environment.Exit(exUsage);
-}
-
-IEnumerable<Mention> ReadMentions()
-{
-    using var git = StartGit(new[] { "log" }.Concat(refs).ToArray());
-
-    Commit? commit = null;
-
-    while (git.StandardOutput.ReadLine() is { } line)
-    {
-        if (line.StartsWith("commit "))
+        for (; args.Length > 0 && args[0].StartsWith('-'); args = args[1..])
         {
-            commit = new Commit(line.Split(" ", 2)[1]);
+            if (args[0] == "-v" || args[0] == "--interactive")
+                _verbose = true;
+            else if (args[0] == "-n" || args[0] == "--dry-run")
+                _dryRun = true;
+            else
+                Fail($"bad option: {args[0]}");
         }
-        else if (line.StartsWith("    ") && commit != null)
-        {
-            commit.Title ??= line.Length > 76
-                ? line[4..76] + "..."
-                : line[4..];
 
-            foreach (var match in issueRegex.Matches(line).Cast<Match>())
-                yield return new Mention(commit, match.Value);
+        var refs = args;
+
+        if (refs.FirstOrDefault(x => x.StartsWith("-")) is { } badRef)
+            Usage($"bad ref name: {badRef}");
+
+        string jiraUser = GetEnvOrFail("JIRA_USER");
+        string jiraSecret = GetSecret("JIRA_SECRET", "Jira client secret");
+
+        string jiraBaseUrlStr = GetGitConfigOrFail("jira.baseUrl");
+        string issueRegexStr = GetGitConfigOrFail("jira.issueRegex");
+        string commitLinkFormat = GetGitConfigOrFail("jira.commitLinkFormat");
+
+        var jiraBaseUrl = DoOrFail(() => new Uri(jiraBaseUrlStr), "jira.baseUrl");
+        var issueRegex = DoOrFail(() => new Regex(issueRegexStr), "jira.issueRegex");
+
+        if (!commitLinkFormat.Contains("{commitHash}"))
+            Usage("jira.commitLinkFormat must contain {commitHash}");
+
+        string repoName = Regex.Replace(GetGitOriginOrFail(), "\\.git$", "")
+            .Split('/').Last();
+
+        var jira = new JiraClient(jiraBaseUrl, jiraUser, jiraSecret);
+        jira.Verbose = _verbose;
+
+        foreach (var group in ReadMentions(refs, issueRegex).GroupBy(x => x.IssueKey))
+        {
+            var issue = await jira.GetIssueAsync(group.Key);
+
+            if (issue == null)
+            {
+                Console.WriteLine($"{group.Key} (not found)");
+                continue;
+            }
+
+            Console.WriteLine($"{group.Key} {issue.Fields.Summary ?? "(no title)"}");
+
+            var commits = group.Select(x => x.Commit).Distinct();
+            var toMention = new List<Commit>();
+
+            foreach (var commit in commits)
+            {
+                if (issue.GetAllText().Any(x => x.Contains(commit.ShortHash)))
+                    Console.WriteLine($"  already mentioned: {commit}");
+                else
+                    toMention.Add(commit);
+            }
+
+            if (toMention.Count == 0)
+            {
+                Console.WriteLine("  nothing to do for issue");
+                continue;
+            }
+
+            var comment = new StringBuilder();
+            comment.AppendLine($"Related commits in {repoName}:");
+            comment.AppendLine();
+
+            foreach (var commit in toMention)
+            {
+                Console.WriteLine($"  {commit}");
+
+                comment.Append(" * [");
+                comment.Append(commit.ShortHash);
+                comment.Append(" - ");
+                comment.Append(commit.Title);
+                comment.Append('|');
+                comment.Append(commitLinkFormat.Replace("{commitHash}", commit.Hash));
+                comment.AppendLine("]");
+            }
+
+            if (_verbose)
+            {
+                Console.WriteLine();
+                Console.WriteLine(comment);
+            }
+
+            if (_dryRun)
+                continue;
+
+            await jira.PostCommentAsync(issue.Key, comment.ToString());
         }
     }
 
-    git.WaitForExit();
-
-    if (git.ExitCode != 0)
-        Fail($"git exited with status code {git.ExitCode}", exSubprocess);
-}
-
-T DoOrFail<T>(Func<T> fn, string message)
-{
-    try
+    static void Usage(string message)
     {
-        return fn();
+        Console.Error.WriteLine($"git-jira: {message}");
+        Console.Error.WriteLine("Usage: git-jira link-commits [refs]");
+        Environment.Exit(ExUsage);
     }
-    catch (Exception e)
+
+    static IEnumerable<Mention> ReadMentions(IEnumerable<string> refs, Regex issueRegex)
     {
-        Fail($"{message}: {e.Message}");
-        throw; // not reached
-    }
-}
+        using var git = StartGit(new[] { "log" }.Concat(refs).ToArray());
 
-string GetGitOriginOrFail()
-{
-    using var git = StartGit("remote", "get-url", "origin");
+        Commit? commit = null;
 
-    string? output = git.StandardOutput.ReadLine();
-
-    git.WaitForExit();
-
-    if (string.IsNullOrWhiteSpace(output) || git.ExitCode != 0)
-        Fail($"can't get 'origin' remote");
-
-    return output;
-}
-
-string GetGitConfigOrFail(string name)
-{
-    using var git = StartGit("config", name);
-
-    string? output = git.StandardOutput.ReadLine();
-
-    git.WaitForExit();
-
-    if (string.IsNullOrWhiteSpace(output) || git.ExitCode != 0)
-        Fail($"'{name}' must be set in git config");
-
-    return output;
-}
-
-string GetSecret(string envName, string friendlyName)
-{
-    string? secret = Environment.GetEnvironmentVariable(envName);
-    if (!string.IsNullOrWhiteSpace(secret))
-        return secret;
-
-    string? command = Environment.GetEnvironmentVariable($"{envName}_COMMAND");
-    if (command != null)
-    {
-        using var process = new Process();
-        process.StartInfo.CreateNoWindow = true;
-        process.StartInfo.RedirectStandardOutput = true;
-
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        while (git.StandardOutput.ReadLine() is { } line)
         {
-            process.StartInfo.FileName = "cmd";
-            process.StartInfo.Arguments = $"/c {command}";
-        }
-        else
-        {
-            process.StartInfo.FileName = "sh";
-            process.StartInfo.ArgumentList.Add("-c");
-            process.StartInfo.ArgumentList.Add(command);
+            if (line.StartsWith("commit "))
+            {
+                commit = new Commit(line.Split(" ", 2)[1]);
+            }
+            else if (line.StartsWith("    ") && commit != null)
+            {
+                commit.Title ??= line.Length > 76
+                    ? line[4..76] + "..."
+                    : line[4..];
+
+                foreach (var match in issueRegex.Matches(line).Cast<Match>())
+                    yield return new Mention(commit, match.Value);
+            }
         }
 
-        if (verbose)
-            Console.WriteLine($"+ {command}");
+        git.WaitForExit();
 
-        process.Start();
+        if (git.ExitCode != 0)
+            Fail($"git exited with status code {git.ExitCode}", ExSubprocess);
+    }
 
-        secret = process.StandardOutput.ReadLine();
+    static T DoOrFail<T>(Func<T> fn, string message)
+    {
+        try
+        {
+            return fn();
+        }
+        catch (Exception e)
+        {
+            Fail($"{message}: {e.Message}");
+            throw; // not reached
+        }
+    }
 
-        process.WaitForExit();
+    static string GetGitOriginOrFail()
+    {
+        using var git = StartGit("remote", "get-url", "origin");
 
-        if (process.ExitCode != 0)
-            Console.Error.WriteLine(
-                $"git-jira: '{command}' returned non-zero exit code " +
-                $"{process.ExitCode}");
-        else if (string.IsNullOrWhiteSpace(secret))
-            Console.Error.WriteLine($"git-jira: '{command}' returned no data");
-        else
+        string? output = git.StandardOutput.ReadLine();
+
+        git.WaitForExit();
+
+        if (string.IsNullOrWhiteSpace(output) || git.ExitCode != 0)
+            Fail($"can't get 'origin' remote");
+
+        return output;
+    }
+
+    static string GetGitConfigOrFail(string name)
+    {
+        using var git = StartGit("config", name);
+
+        string? output = git.StandardOutput.ReadLine();
+
+        git.WaitForExit();
+
+        if (string.IsNullOrWhiteSpace(output) || git.ExitCode != 0)
+            Fail($"'{name}' must be set in git config");
+
+        return output;
+    }
+
+    static string GetSecret(string envName, string friendlyName)
+    {
+        string? secret = Environment.GetEnvironmentVariable(envName);
+        if (!string.IsNullOrWhiteSpace(secret))
             return secret;
+
+        string? command = Environment.GetEnvironmentVariable($"{envName}_COMMAND");
+        if (command != null)
+        {
+            using var process = new Process();
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.RedirectStandardOutput = true;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                process.StartInfo.FileName = "cmd";
+                process.StartInfo.Arguments = $"/c {command}";
+            }
+            else
+            {
+                process.StartInfo.FileName = "sh";
+                process.StartInfo.ArgumentList.Add("-c");
+                process.StartInfo.ArgumentList.Add(command);
+            }
+
+            if (_verbose)
+                Console.WriteLine($"+ {command}");
+
+            process.Start();
+
+            secret = process.StandardOutput.ReadLine();
+
+            process.WaitForExit();
+
+            if (process.ExitCode != 0)
+                Console.Error.WriteLine(
+                    $"git-jira: '{command}' returned non-zero exit code " +
+                    $"{process.ExitCode}");
+            else if (string.IsNullOrWhiteSpace(secret))
+                Console.Error.WriteLine($"git-jira: '{command}' returned no data");
+            else
+                return secret;
+        }
+
+        while (string.IsNullOrWhiteSpace(secret))
+        {
+            Console.Write($"{friendlyName}: ");
+            Console.Out.Flush();
+
+            secret = Console.ReadLine();
+        }
+
+        return secret;
     }
 
-    while (string.IsNullOrWhiteSpace(secret))
+    static Process StartGit(params string[] args)
     {
-        Console.Write($"{friendlyName}: ");
-        Console.Out.Flush();
+        var git = new Process();
+        git.StartInfo.FileName = "git";
+        git.StartInfo.UseShellExecute = false;
+        git.StartInfo.CreateNoWindow = true;
+        git.StartInfo.RedirectStandardOutput = true;
 
-        secret = Console.ReadLine();
+        foreach (var arg in args)
+            git.StartInfo.ArgumentList.Add(arg);
+
+        if (_verbose)
+            Console.WriteLine($"+ git {string.Join(" ", args)}");
+
+        git.Start();
+
+        return git;
     }
 
-    return secret;
-}
+    static string GetEnvOrFail(string name)
+    {
+        string? value = Environment.GetEnvironmentVariable(name);
+        if (value == null)
+            Fail($"{name} must be set");
 
-Process StartGit(params string[] args)
-{
-    var git = new Process();
-    git.StartInfo.FileName = "git";
-    git.StartInfo.UseShellExecute = false;
-    git.StartInfo.CreateNoWindow = true;
-    git.StartInfo.RedirectStandardOutput = true;
+        return value;
+    }
 
-    foreach (var arg in args)
-        git.StartInfo.ArgumentList.Add(arg);
-
-    if (verbose)
-        Console.WriteLine($"+ git {string.Join(" ", args)}");
-
-    git.Start();
-
-    return git;
-}
-
-string GetEnvOrFail(string name)
-{
-    string? value = Environment.GetEnvironmentVariable(name);
-    if (value == null)
-        Fail($"{name} must be set");
-
-    return value;
-}
-
-[DoesNotReturn]
-void Fail(string message, int exitCode = 1)
-{
-    Console.Error.WriteLine($"git-jira: {message}");
-    Environment.Exit(exitCode);
+    [DoesNotReturn]
+    static void Fail(string message, int exitCode = 1)
+    {
+        Console.Error.WriteLine($"git-jira: {message}");
+        Environment.Exit(exitCode);
+    }
 }
 
 class Commit : IEquatable<Commit>
@@ -290,10 +298,13 @@ class Commit : IEquatable<Commit>
 
     public override string ToString()
         => Title == null ? ShortHash : $"{ShortHash} {Title}";
+
     public bool Equals(Commit? other)
         => Hash == other?.Hash;
+
     public override bool Equals(object? obj)
         => obj is Commit commit && Equals(commit);
+
     public override int GetHashCode()
         => Hash.GetHashCode();
 }
