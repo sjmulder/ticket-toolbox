@@ -18,7 +18,7 @@ static class Git
         return output;
     }
 
-    public static string GetRequiredConfig(string name)
+    public static string? GetConfig(string name)
     {
         using var git = Run("config", name);
 
@@ -26,10 +26,10 @@ static class Git
 
         git.WaitForExit();
 
-        if (string.IsNullOrWhiteSpace(output))
-            throw new Exception($"empty git config for {name}");
         if (git.ExitCode != 0)
-            throw new SubprocessException(git);
+            return null;
+        if (string.IsNullOrWhiteSpace(output))
+            return null;
 
         return output;
     }

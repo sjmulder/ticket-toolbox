@@ -12,18 +12,23 @@ class LinkCommitsTool(string[] args, ToolSettings settings)
         if (refs.FirstOrDefault(x => x.StartsWith("-")) is { } badRef)
             throw new UsageException($"bad ref name: {badRef}");
 
-        if (!settings.CommitLinkFormat.Contains("{commitHash}"))
-            throw new UsageException(
-                "jira.commitLinkFormat must contain {commitHash}");
+        settings.AddJiraSecret();
+
+        settings.ValidateForJiraAccess();
+        settings.ValidateForJiraLinking();
 
         string repoName = Regex
             .Replace(Git.GetOriginOrFail(), "\\.git$", "")
             .Split('/').Last();
 
-        var jira = new JiraClient(settings.JiraBaseUrl, settings.JiraUser, settings.JiraSecret);
+        var jira = new JiraClient(
+            settings.JiraBaseUrl!,
+            settings.JiraUser!,
+            settings.JiraSecret!);
+
         jira.Verbose = Program.Verbose;
 
-        foreach (var group in ReadMentions(refs, settings.IssueRegex).GroupBy(x => x.IssueKey))
+        foreach (var group in ReadMentions(refs, settings.IssueRegex!).GroupBy(x => x.IssueKey))
         {
             var issue = await jira.GetIssueAsync(group.Key);
 
@@ -65,7 +70,7 @@ class LinkCommitsTool(string[] args, ToolSettings settings)
                 comment.Append(" - ");
                 comment.Append(commit.Title);
                 comment.Append('|');
-                comment.Append(settings.CommitLinkFormat.Replace("{commitHash}", commit.Hash));
+                comment.Append(settings.CommitLinkFormat!.Replace("{commitHash}", commit.Hash));
                 comment.AppendLine("]");
             }
 
