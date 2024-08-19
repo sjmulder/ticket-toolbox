@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace TicketToolbox;
 
-public static class Util
+static class Util
 {
     public const int ExUsage = 64; // EX_USAGE from sysexits.h
     public const int ExSubprocess = 123; // xargs' convention

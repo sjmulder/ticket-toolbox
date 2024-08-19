@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace TicketToolbox;
 
-public class ToolSettings
+class ToolSettings
 {
     public string JiraUser { get; set; } = null!;
     public string JiraSecret { get; set; } = null!;

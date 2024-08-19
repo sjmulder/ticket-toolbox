@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace TicketToolbox;
 
-public static class Program
+static class Program
 {
     public static bool Verbose { get; private set; }
     public static bool DryRun { get; private set; }

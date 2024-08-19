@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace TicketToolbox;
 
-public static class Git
+static class Git
 {
     public static string GetOriginOrFail()
     {

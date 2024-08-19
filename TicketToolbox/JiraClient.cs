@@ -104,12 +104,12 @@ class JiraComment
     public string Body { get; set; } = null!;
 }
 
-public class NewJiraComment
+class NewJiraComment
 {
     public string? Body { get; set; }
 }
 
-public class JiraException(
+class JiraException(
     string message,
     string? responseBody = null) : Exception(message)
 {
