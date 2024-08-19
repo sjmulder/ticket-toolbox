@@ -12,8 +12,8 @@ class ToolSettings
 
     public static ToolSettings LoadOrFail()
     {
-        string jiraBaseUrlStr = Git.GetConfigOrFail("jira.baseUrl");
-        string issueRegexStr = Git.GetConfigOrFail("jira.issueRegex");
+        string jiraBaseUrlStr = Git.GetRequiredConfig("jira.baseUrl");
+        string issueRegexStr = Git.GetRequiredConfig("jira.issueRegex");
 
         string? jiraUser = Environment.GetEnvironmentVariable("JIRA_USER");
         if (jiraUser == null)
@@ -23,7 +23,7 @@ class ToolSettings
         {
             JiraUser = jiraUser,
             JiraSecret = Program.GetSecret("JIRA_SECRET", "Jira client secret"),
-            CommitLinkFormat = Git.GetConfigOrFail("jira.commitLinkFormat"),
+            CommitLinkFormat = Git.GetRequiredConfig("jira.commitLinkFormat"),
             JiraBaseUrl = new Uri(jiraBaseUrlStr),
             IssueRegex = new Regex(issueRegexStr)
         };

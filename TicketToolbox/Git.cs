@@ -18,7 +18,7 @@ static class Git
         return output;
     }
 
-    public static string GetConfigOrFail(string name)
+    public static string GetRequiredConfig(string name)
     {
         using var git = Run("config", name);
 
