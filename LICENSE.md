@@ -1,5 +1,5 @@
-Copyright (c) 2022, Securify b.v.
-Copyright (c) 2022, Sijmen J. Mulder
+Copyright (c) 2022-2024, Securify b.v.
+Copyright (c) 2022-2024, Sijmen J. Mulder
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
