@@ -108,7 +108,7 @@ class LinkCommitsTool(string[] args, ToolSettings settings)
         git.WaitForExit();
 
         if (git.ExitCode != 0)
-            Util.Fail($"git exited with status code {git.ExitCode}", Util.ExSubprocess);
+            throw new SubprocessException(git);
     }
 }
 

@@ -13,7 +13,7 @@ static class Git
         git.WaitForExit();
 
         if (string.IsNullOrWhiteSpace(output) || git.ExitCode != 0)
-            Util.Fail($"can't get 'origin' remote");
+            throw new Exception($"can't get 'origin' remote");
 
         return output;
     }
@@ -26,8 +26,10 @@ static class Git
 
         git.WaitForExit();
 
-        if (string.IsNullOrWhiteSpace(output) || git.ExitCode != 0)
-            Util.Fail($"'{name}' must be set in git config");
+        if (string.IsNullOrWhiteSpace(output))
+            throw new Exception($"empty git config for {name}");
+        if (git.ExitCode != 0)
+            throw new SubprocessException(git);
 
         return output;
     }
