@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
-namespace GitJira;
+namespace TicketToolbox;
 
 public static class Util
 {
@@ -12,7 +12,7 @@ public static class Util
     [DoesNotReturn]
     public static void Fail(string message, int exitCode = 1)
     {
-        Console.Error.WriteLine($"git-jira: {message}");
+        Console.Error.WriteLine($"ticket-toolbox: {message}");
         Environment.Exit(exitCode);
     }
 
@@ -73,10 +73,10 @@ public static class Util
 
             if (process.ExitCode != 0)
                 Console.Error.WriteLine(
-                    $"git-jira: '{command}' returned non-zero exit code " +
+                    $"ticket-toolbox: '{command}' returned non-zero exit code " +
                     $"{process.ExitCode}");
             else if (string.IsNullOrWhiteSpace(secret))
-                Console.Error.WriteLine($"git-jira: '{command}' returned no data");
+                Console.Error.WriteLine($"ticket-toolbox: '{command}' returned no data");
             else
                 return secret;
         }

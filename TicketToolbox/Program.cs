@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Text.RegularExpressions;
 
-namespace GitJira;
+namespace TicketToolbox;
 
 public static class Program
 {
@@ -104,8 +104,8 @@ public static class Program
 
     static void Usage(string message)
     {
-        Console.Error.WriteLine($"git-jira: {message}");
-        Console.Error.WriteLine("Usage: git-jira link-commits [refs]");
+        Console.Error.WriteLine($"ticket-toolbox: {message}");
+        Console.Error.WriteLine("Usage: ticket-toolbox link-commits [refs]");
         Environment.Exit(Util.ExUsage);
     }
 

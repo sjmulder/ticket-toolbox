@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace GitJira;
+namespace TicketToolbox;
 
 public class GitJiraConfig
 {

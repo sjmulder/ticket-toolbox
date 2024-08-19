@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace GitJira;
+namespace TicketToolbox;
 
 public static class Git
 {
