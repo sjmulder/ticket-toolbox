@@ -32,7 +32,7 @@ public static class Program
         if (refs.FirstOrDefault(x => x.StartsWith("-")) is { } badRef)
             Usage($"bad ref name: {badRef}");
 
-        var config = GitJiraConfig.LoadOrFail();
+        var config = ToolSettings.LoadOrFail();
 
         if (!config.CommitLinkFormat.Contains("{commitHash}"))
             Usage("jira.commitLinkFormat must contain {commitHash}");
