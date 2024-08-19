@@ -109,13 +109,9 @@ public class NewJiraComment
     public string? Body { get; set; }
 }
 
-public class JiraException : Exception
+public class JiraException(
+    string message,
+    string? responseBody = null) : Exception(message)
 {
-    public JiraException(string message, string? responseBody = null)
-        : base(message)
-    {
-        ResponseBody = responseBody;
-    }
-
-    public string? ResponseBody { get; set; }
+    public string? ResponseBody { get; set; } = responseBody;
 }

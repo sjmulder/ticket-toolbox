@@ -52,17 +52,11 @@ public static class Git
     }
 }
 
-class Commit : IEquatable<Commit>
+class Commit(string hash, string? title = null) : IEquatable<Commit>
 {
-    public Commit(string hash, string? title = null)
-    {
-        Hash = hash;
-        Title = title;
-    }
-
-    public string Hash { get; }
+    public string Hash { get; } = hash;
     public string ShortHash => Hash[..8];
-    public string? Title { get; set; }
+    public string? Title { get; set; } = title;
 
     public override string ToString()
         => Title == null ? ShortHash : $"{ShortHash} {Title}";
