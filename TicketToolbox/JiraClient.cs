@@ -72,9 +72,9 @@ class JiraClient
 
 class JiraIssue
 {
-    public string Id { get; set; } = null!;
-    public string Key { get; set; } = null!;
-    public JiraIssueFields Fields { get; set; } = null!;
+    public required string Id { get; set; }
+    public required string Key { get; set; }
+    public required JiraIssueFields Fields { get; set; }
 
     public IEnumerable<string> GetAllText()
     {
@@ -96,12 +96,12 @@ class JiraIssueFields
 
 class JiraCommentField
 {
-    public JiraComment[] Comments { get; set; } = null!;
+    public required JiraComment[] Comments { get; set; }
 }
 
 class JiraComment
 {
-    public string Body { get; set; } = null!;
+    public required string Body { get; set; }
 }
 
 class NewJiraComment

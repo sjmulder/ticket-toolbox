@@ -4,11 +4,11 @@ namespace TicketToolbox;
 
 class ToolSettings
 {
-    public string JiraUser { get; set; } = null!;
-    public string JiraSecret { get; set; } = null!;
-    public Uri JiraBaseUrl { get; set; } = null!;
-    public Regex IssueRegex { get; set; } = null!;
-    public string CommitLinkFormat { get; set; } = null!;
+    public required string JiraUser { get; set; }
+    public required string JiraSecret { get; set; }
+    public required Uri JiraBaseUrl { get; set; }
+    public required Regex IssueRegex { get; set; }
+    public required string CommitLinkFormat { get; set; }
 
     public static ToolSettings LoadOrFail()
     {
