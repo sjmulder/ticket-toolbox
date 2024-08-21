@@ -25,7 +25,7 @@ class JiraClient
     {
         string path = $"rest/api/2/issue/{key}?fields=summary,description,comment";
 
-        if (Verbose)
+        if (Program.Verbose)
             Console.WriteLine($"> GET {_http.BaseAddress}{path}");
 
         var response = await _http.GetAsync(path);
@@ -41,7 +41,7 @@ class JiraClient
     {
         string path = $"rest/api/2/issue/{key}/comment";
 
-        if (Verbose)
+        if (Program.Verbose)
             Console.WriteLine($"> POST {_http.BaseAddress}{path}");
 
         var comment = new NewJiraComment();

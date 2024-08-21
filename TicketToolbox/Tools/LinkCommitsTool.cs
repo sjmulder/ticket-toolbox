@@ -26,8 +26,6 @@ class LinkCommitsTool(string[] args, ToolSettings settings)
             settings.JiraUser!,
             settings.JiraSecret!);
 
-        jira.Verbose = Program.Verbose;
-
         foreach (var group in ReadMentions(refs, settings.IssueRegex!).GroupBy(x => x.IssueKey))
         {
             var issue = await jira.GetIssueAsync(group.Key);
