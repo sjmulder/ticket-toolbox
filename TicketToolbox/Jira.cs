@@ -52,6 +52,7 @@ class JiraClient
             await RaiseError(response, $"Failed to post comment on {key}");
     }
 
+    [DoesNotReturn]
     [SuppressMessage("ReSharper", "MethodHasAsyncOverload")]
     async Task RaiseError(HttpResponseMessage response, string message)
     {
