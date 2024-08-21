@@ -10,11 +10,17 @@ class ToolSettings
     const string JiraIssueRegexKey = "jira.issueRegex";
     const string JiraCommitLinkFormatKey = "jira.commitLinkFormat";
 
+    const string AdoPatKey = "ADO_PAT";
+    const string AdoBaseUrlKey = "ado.baseUrl";
+
     public string? JiraUser { get; set; }
     public string? JiraSecret { get; set; }
     public Uri? JiraBaseUrl { get; set; }
     public Regex? IssueRegex { get; set; }
     public string? CommitLinkFormat { get; set; }
+
+    public string? AdoPat { get; set; }
+    public Uri? AdoBaseUrl { get; set; }
 
     public void ValidateForJiraAccess()
     {
@@ -24,6 +30,12 @@ class ToolSettings
             throw new UsageException($"{JiraSecretKey} must be set");
         if (JiraBaseUrl == null)
             throw new UsageException($"{JiraBaseUrlKey} must be set");
+    }
+
+    public void ValidateForAdoAccess()
+    {
+        if (AdoPat == null)
+            throw new UsageException($"{AdoPatKey} must be set");
     }
 
     public void ValidateForJiraLinking()
@@ -37,9 +49,20 @@ class ToolSettings
                 $"{JiraCommitLinkFormatKey} must contain {{commitHash}}");
     }
 
+    public void ValidateForSyncingLinks()
+    {
+        if (IssueRegex == null)
+            throw new UsageException($"{JiraIssueRegexKey} must be set");
+    }
+
     public void AddJiraSecret()
     {
         JiraSecret = Program.GetSecret(JiraSecretKey, "Jira client secret");
+    }
+
+    public void AddAdoSecret()
+    {
+        AdoPat = Program.GetSecret(AdoPatKey, "ADO PAT");
     }
 
     public static ToolSettings LoadOrFail()
@@ -48,8 +71,10 @@ class ToolSettings
         {
             JiraUser = Environment.GetEnvironmentVariable(JiraUserKey),
             JiraBaseUrl = Git.GetConfig(JiraBaseUrlKey)?.ToUri(),
+            IssueRegex = Git.GetConfig(JiraIssueRegexKey)?.ToRegex(),
             CommitLinkFormat = Git.GetConfig(JiraCommitLinkFormatKey),
-            IssueRegex = Git.GetConfig(JiraIssueRegexKey)?.ToRegex()
+
+            AdoBaseUrl = Git.GetConfig(AdoBaseUrlKey)?.ToUri(),
         };
 
         return settings;

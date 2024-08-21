@@ -20,8 +20,6 @@ static class Program
         {
             if (args.Length == 0 || args[0] == "-?")
                 throw new UsageException("no command given");
-            if (args[0] != "link-commits")
-                throw new UsageException($"bad command: {args[0]}");
 
             var rest = args[1..];
 
@@ -36,7 +34,14 @@ static class Program
             }
 
             var settings = ToolSettings.LoadOrFail();
-            var tool = new LinkCommitsTool(rest, settings);
+
+            ITool tool = args[0] switch
+            {
+                "link-commits" => new LinkCommitsTool(rest, settings),
+                "jira-ado-sync-links" => new JiraAdoSyncLinksTool(rest, settings),
+                _ => throw new UsageException($"bad command: {args[0]}")
+            };
+
             await tool.RunAsync();
         }
         catch (UsageException ex)

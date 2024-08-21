@@ -16,9 +16,17 @@ mentioned in the issue description or comments.
 again, the tool is idempotent - running it a second time will not cause
 it to re-post the same comments.
 
-With **-v** or **--verbose**, a some debug info is printed.
+jira-ado-sync-links
+-------------------
+Copies issue links ("blocks", "duplicate of", etc.) from Jira to
+Azure DevOps.
 
-With **-n** or **--dry-run**, no comment is actually posted.
+Common arguments
+----------------
+With **-v** or **--verbose**, some debug info is printed.
+
+With **-n** or **--dry-run**, only a preview of the action is given, no
+changes are written.
 
 Setup
 -----

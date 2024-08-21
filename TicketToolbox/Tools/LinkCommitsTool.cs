@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace TicketToolbox.Tools;
 
-class LinkCommitsTool(string[] args, ToolSettings settings)
+class LinkCommitsTool(string[] args, ToolSettings settings) : ITool
 {
     public async Task RunAsync()
     {
@@ -36,7 +36,7 @@ class LinkCommitsTool(string[] args, ToolSettings settings)
                 continue;
             }
 
-            Console.WriteLine($"{group.Key} {issue.Fields.Summary ?? "(no title)"}");
+            Console.WriteLine($"{group.Key} {issue.Fields!.Summary ?? "(no title)"}");
 
             var commits = group.Select(x => x.Commit).Distinct();
             var toMention = new List<Commit>();
