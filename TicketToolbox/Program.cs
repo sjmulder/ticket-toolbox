@@ -23,20 +23,20 @@ static class Program
             if (args[0] != "link-commits")
                 throw new UsageException($"bad command: {args[0]}");
 
-            args = args[1..];
+            var rest = args[1..];
 
-            for (; args.Length > 0 && args[0].StartsWith('-'); args = args[1..])
+            for (; rest.Length > 0 && rest[0].StartsWith('-'); rest = rest[1..])
             {
-                if (args[0] == "-v" || args[0] == "--interactive")
+                if (rest[0] == "-v" || rest[0] == "--interactive")
                     Verbose = true;
-                else if (args[0] == "-n" || args[0] == "--dry-run")
+                else if (rest[0] == "-n" || rest[0] == "--dry-run")
                     DryRun = true;
                 else
-                    throw new UsageException($"bad option: {args[0]}");
+                    throw new UsageException($"bad option: {rest[0]}");
             }
 
             var settings = ToolSettings.LoadOrFail();
-            var tool = new LinkCommitsTool(args, settings);
+            var tool = new LinkCommitsTool(rest, settings);
             await tool.RunAsync();
         }
         catch (UsageException ex)
