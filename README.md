@@ -93,7 +93,8 @@ DevOps ork items, and creates equivalent relations between them. For
 example, "blocked by" becomes a "Successor" relation.
 
 Tickets are matched by looking for the Jira key in the title. Existing
-relations are kept and no duplicates created.
+relations are kept and no duplicates created. Errors are reported but
+not fatal.
 
 Options:
  - **-v** or **--verbose**: print additional debug info.
