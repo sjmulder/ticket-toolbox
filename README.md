@@ -100,7 +100,7 @@ Options:
  - **-n** or **--dry-run**: only give a preview, don't actually create
    the links.
 
-## Example
+### Example
 
     > cd C:\code\SomeWebapp
     > ticket-toolbox jira-ado-sync-links
@@ -113,7 +113,7 @@ Options:
       keep: System.LinkTypes.Related #9899 (relates to FOO-183)
     ...
 
-## Q&A
+### Q&A
 
 **How are linked types mapped?**
 
