@@ -1,8 +1,8 @@
 using System.Diagnostics;
 
-namespace GitJira;
+namespace TicketToolbox;
 
-public static class Git
+static class Git
 {
     public static string GetOriginOrFail()
     {
@@ -13,12 +13,12 @@ public static class Git
         git.WaitForExit();
 
         if (string.IsNullOrWhiteSpace(output) || git.ExitCode != 0)
-            Util.Fail($"can't get 'origin' remote");
+            throw new Exception($"can't get 'origin' remote");
 
         return output;
     }
 
-    public static string GetConfigOrFail(string name)
+    public static string? GetConfig(string name)
     {
         using var git = Run("config", name);
 
@@ -26,8 +26,10 @@ public static class Git
 
         git.WaitForExit();
 
-        if (string.IsNullOrWhiteSpace(output) || git.ExitCode != 0)
-            Util.Fail($"'{name}' must be set in git config");
+        if (git.ExitCode != 0)
+            return null;
+        if (string.IsNullOrWhiteSpace(output))
+            return null;
 
         return output;
     }
@@ -52,17 +54,11 @@ public static class Git
     }
 }
 
-class Commit : IEquatable<Commit>
+class Commit(string hash, string? title = null) : IEquatable<Commit>
 {
-    public Commit(string hash, string? title = null)
-    {
-        Hash = hash;
-        Title = title;
-    }
-
-    public string Hash { get; }
+    public string Hash { get; } = hash;
     public string ShortHash => Hash[..8];
-    public string? Title { get; set; }
+    public string? Title { get; set; } = title;
 
     public override string ToString()
         => Title == null ? ShortHash : $"{ShortHash} {Title}";

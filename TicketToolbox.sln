@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GitJira", "GitJira\GitJira.csproj", "{5C1F0E2C-6DC2-4C96-B4A7-BE4F847A5F9D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TicketToolbox", "TicketToolbox\TicketToolbox.csproj", "{5C1F0E2C-6DC2-4C96-B4A7-BE4F847A5F9D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{B235676B-31E9-488F-8599-EA8878D1D94D}"
 	ProjectSection(SolutionItems) = preProject

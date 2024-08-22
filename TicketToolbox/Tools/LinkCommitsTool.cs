@@ -1,49 +1,32 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.RegularExpressions;
 
-namespace GitJira;
+namespace TicketToolbox.Tools;
 
-public static class Program
+class LinkCommitsTool(string[] args, ToolSettings settings) : ITool
 {
-    public static bool Verbose { get; private set; }
-    public static bool DryRun { get; private set; }
-
-    public static async Task Main(string[] args)
+    public async Task RunAsync()
     {
-        if (args.Length == 0 || args[0] == "-?")
-            Usage("no command given");
-        if (args[0] != "link-commits")
-            Usage($"bad command: {args[0]}");
-
-        args = args[1..];
-
-        for (; args.Length > 0 && args[0].StartsWith('-'); args = args[1..])
-        {
-            if (args[0] == "-v" || args[0] == "--interactive")
-                Verbose = true;
-            else if (args[0] == "-n" || args[0] == "--dry-run")
-                DryRun = true;
-            else
-                Util.Fail($"bad option: {args[0]}");
-        }
-
         var refs = args;
 
         if (refs.FirstOrDefault(x => x.StartsWith("-")) is { } badRef)
-            Usage($"bad ref name: {badRef}");
+            throw new UsageException($"bad ref name: {badRef}");
 
-        var config = GitJiraConfig.LoadOrFail();
+        settings.AddJiraSecret();
 
-        if (!config.CommitLinkFormat.Contains("{commitHash}"))
-            Usage("jira.commitLinkFormat must contain {commitHash}");
+        settings.ValidateForJiraAccess();
+        settings.ValidateForJiraLinking();
 
-        string repoName = Regex.Replace(Git.GetOriginOrFail(), "\\.git$", "")
+        string repoName = Regex
+            .Replace(Git.GetOriginOrFail(), "\\.git$", "")
             .Split('/').Last();
 
-        var jira = new JiraClient(config.JiraBaseUrl, config.JiraUser, config.JiraSecret);
-        jira.Verbose = Verbose;
+        var jira = new JiraClient(
+            settings.JiraBaseUrl!,
+            settings.JiraUser!,
+            settings.JiraSecret!);
 
-        foreach (var group in ReadMentions(refs, config.IssueRegex).GroupBy(x => x.IssueKey))
+        foreach (var group in ReadMentions(refs, settings.IssueRegex!).GroupBy(x => x.IssueKey))
         {
             var issue = await jira.GetIssueAsync(group.Key);
 
@@ -53,7 +36,7 @@ public static class Program
                 continue;
             }
 
-            Console.WriteLine($"{group.Key} {issue.Fields.Summary ?? "(no title)"}");
+            Console.WriteLine($"{group.Key} {issue.Fields!.Summary ?? "(no title)"}");
 
             var commits = group.Select(x => x.Commit).Distinct();
             var toMention = new List<Commit>();
@@ -85,31 +68,24 @@ public static class Program
                 comment.Append(" - ");
                 comment.Append(commit.Title);
                 comment.Append('|');
-                comment.Append(config.CommitLinkFormat.Replace("{commitHash}", commit.Hash));
+                comment.Append(settings.CommitLinkFormat!.Replace("{commitHash}", commit.Hash));
                 comment.AppendLine("]");
             }
 
-            if (Verbose)
+            if (Program.Verbose)
             {
                 Console.WriteLine();
                 Console.WriteLine(comment);
             }
 
-            if (DryRun)
+            if (Program.DryRun)
                 continue;
 
             await jira.PostCommentAsync(issue.Key, comment.ToString());
         }
     }
 
-    static void Usage(string message)
-    {
-        Console.Error.WriteLine($"git-jira: {message}");
-        Console.Error.WriteLine("Usage: git-jira link-commits [refs]");
-        Environment.Exit(Util.ExUsage);
-    }
-
-    static IEnumerable<Mention> ReadMentions(IEnumerable<string> refs, Regex issueRegex)
+    IEnumerable<Mention> ReadMentions(IEnumerable<string> refs, Regex issueRegex)
     {
         using var git = Git.Run(new[] { "log" }.Concat(refs).ToArray());
 
@@ -134,7 +110,8 @@ public static class Program
 
         git.WaitForExit();
 
-        if (git.ExitCode != 0) Util.Fail($"git exited with status code {git.ExitCode}", Util.ExSubprocess);
+        if (git.ExitCode != 0)
+            throw new SubprocessException(git);
     }
 }
 

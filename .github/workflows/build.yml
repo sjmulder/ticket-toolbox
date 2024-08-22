@@ -22,10 +22,10 @@ jobs:
         run: >
           dotnet publish
           -r ${{ matrix.runtime_id }}
-          -o dist/${{ matrix.runtime_id }}/git-jira
+          -o dist/${{ matrix.runtime_id }}/ticket-toolbox
           --no-self-contained
-          GitJira/GitJira.csproj
+          TicketToolbox/TicketToolbox.csproj
       - uses: actions/upload-artifact@v4
         with:
-          name: git-jira.${{ matrix.runtime_id }}
+          name: ticket-toolbox.${{ matrix.runtime_id }}
           path: dist/${{ matrix.runtime_id }}
