@@ -81,7 +81,7 @@ class JiraAdoSyncLinksTool (string[] args, ToolSettings settings) : ITool
                 {
                     "clones" => "System.LinkTypes.Duplicate-Forward",
                     "duplicates" => "System.LinkTypes.Duplicate-Forward",
-                    "blocks" => "System.LinkTypes.Successor",
+                    "blocks" => "System.LinkTypes.Dependency-Forward",
                     _ => "System.LinkTypes.Related",
                 };
 
