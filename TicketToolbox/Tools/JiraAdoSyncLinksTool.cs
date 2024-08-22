@@ -2,6 +2,8 @@ using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
+using Microsoft.VisualStudio.Services.WebApi.Patch;
+using Microsoft.VisualStudio.Services.WebApi.Patch.Json;
 
 namespace TicketToolbox.Tools;
 
@@ -91,7 +93,6 @@ class JiraAdoSyncLinksTool (string[] args, ToolSettings settings) : ITool
                     $"{rel} #{adoTo.Id} " +
                     $"({link.LinkType.Outward} {link.OutwardIssue!.Key})";
 
-                // ReSharper disable once ConvertIfStatementToConditionalTernaryExpression
                 if (existing != null)
                 {
                     Console.WriteLine($"  keep:  {desc}");
@@ -99,6 +100,19 @@ class JiraAdoSyncLinksTool (string[] args, ToolSettings settings) : ITool
                 else
                 {
                     Console.WriteLine($"  add:  {desc}");
+
+                    if (Program.DryRun)
+                        continue;
+
+                    try
+                    {
+                        await AddRelation(ado, adoFrom, adoTo, rel);
+                    }
+                    catch (Exception ex)
+                    {
+                        // ReSharper disable once MethodHasAsyncOverload
+                        Console.Error.WriteLine($"ticket-toolbox: {ex.Message}");
+                    }
                 }
             }
         }
@@ -137,5 +151,25 @@ class JiraAdoSyncLinksTool (string[] args, ToolSettings settings) : ITool
         }
 
         return tickets;
+    }
+
+    async Task AddRelation(
+        WorkItemTrackingHttpClient ado,
+        WorkItem adoFrom,
+        WorkItem adoTo, string rel)
+    {
+        var patch = new JsonPatchDocument();
+
+        patch.Add(new()
+        {
+            Operation = Operation.Add,
+            Path = "/relations/-",
+            Value = new { rel, url = adoTo.Url }
+        });
+
+        if (Program.Verbose)
+            Console.WriteLine($"ADO: add {rel} #{adoTo.Id} to #{adoFrom.Id}");
+
+        await ado.UpdateWorkItemAsync(patch, adoFrom.Id!.Value);
     }
 }
